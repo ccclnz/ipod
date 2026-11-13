@@ -1,7 +1,8 @@
 const destinations = {
   store: "https://bulbstore.laposabulb.com/",
+  instagram: "https://www.instagram.com/laposabulb/",
   spotify: "",
-  youtube: ""
+  youtube: "https://www.youtube.com/@laposabulb"
 };
 
 const shopify = {
@@ -47,6 +48,7 @@ const screens = {
   links: {
     title: "Link",
     entries: [
+      { label: "Instagram", url: destinations.instagram },
       { label: "Spotify", url: destinations.spotify },
       { label: "YouTube", url: destinations.youtube }
     ]
@@ -398,6 +400,26 @@ function useTrackButton(step) {
   playAdjacentTrack(playingTrack + step);
 }
 
+let lastHapticAt = -Infinity;
+
+function hapticFeedback() {
+  if (typeof navigator.vibrate !== "function") return;
+  const now = performance.now();
+  if (now - lastHapticAt < 40) return;
+  try {
+    navigator.vibrate(8);
+    lastHapticAt = now;
+  } catch {
+    // Some browsers expose vibration but restrict its use.
+  }
+}
+
+device.addEventListener("click", event => {
+  if (event.pointerType === "touch" && event.target.closest("button")) {
+    hapticFeedback();
+  }
+});
+
 device.querySelector(".previous").addEventListener("click", () => useTrackButton(-1));
 device.querySelector(".next").addEventListener("click", () => useTrackButton(1));
 device.querySelector(".menu").addEventListener("click", goBack);
@@ -462,7 +484,11 @@ wheel.addEventListener("pointermove", event => {
   if (Math.abs(rotation) < stepAngle) return;
   const steps = Math.trunc(rotation / stepAngle);
   rotation -= steps * stepAngle;
+  const previousSelection = selected;
   move(steps);
+  if (event.pointerType === "touch" && selected !== previousSelection) {
+    hapticFeedback();
+  }
 });
 
 wheel.addEventListener("lostpointercapture", event => {
