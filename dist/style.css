@@ -166,6 +166,14 @@ body {
 .product-detail:not([hidden]) + .entries li { font-size: .8125rem; }
 .status { flex: none; margin: 6px 8px 5px; font-size: .7rem; }
 .status:empty { display: none; }
+.ipod,
+.ipod * {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
 .controls {
   --wheel-inset: 10.5%;
   --legend-inset: calc(var(--wheel-inset) / 2);
