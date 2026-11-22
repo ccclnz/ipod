@@ -13,6 +13,7 @@ const shopify = {
 const albums = [
   {
     folder: "LA POSA BULB",
+    artist: "LA POSA BULB",
     titles: [
       "Notti d'estate",
       "Fine del mondo",
@@ -26,10 +27,12 @@ const albums = [
   },
   {
     folder: "DEMONE CUSTODE - Edera",
+    artist: "Edera",
     titles: ["Il bar dei cattivi", "Snob", "Non ho mai", "Ballo", "Demone custode"]
   }
-].map(({ folder, titles }) => ({
+].map(({ folder, artist, titles }) => ({
   label: folder,
+  artist,
   tracks: titles.map((title, index) => ({
     label: title,
     url: "audio/" + encodeURIComponent(folder) + "/" + encodeURIComponent((index + 1) + " - " + title + ".wav")
@@ -40,9 +43,9 @@ const screens = {
   home: {
     title: "LA POSA BULB",
     entries: [
-      { label: "Link", screen: "links", description: "visualizza link utili" },
-      { label: "La Posa Store", screen: "store", description: "visualizza i prodotti su La Posa Store" },
-      { label: "Ascolta", screen: "albums", description: "se anche tu odi i servizi di streaming" }
+      { label: "Link", screen: "links" },
+      { label: "La Posa Store", screen: "store" },
+      { label: "Ascolta", screen: "albums" }
     ]
   },
   links: {
@@ -55,11 +58,28 @@ const screens = {
   },
   albums: { title: "Album", entries: albums },
   music: { title: "", entries: [] },
+  playing: { title: "In riproduzione", entries: [] },
   store: { title: "LA POSA STORE", entries: [] },
   product: { title: "LA POSA STORE", entries: [{ label: "apri LA POSA STORE" }] }
 };
 
 const device = document.querySelector(".ipod");
+const instructions = document.querySelector("#instructions");
+const firstInteraction = new AbortController();
+
+function dismissInstructions() {
+  instructions.classList.add("dismiss-after-interaction");
+  firstInteraction.abort();
+}
+
+for (const event of ["pointerdown", "keydown", "wheel", "click"]) {
+  document.addEventListener(event, dismissInstructions, {
+    capture: true,
+    passive: true,
+    signal: firstInteraction.signal
+  });
+}
+
 const title = document.querySelector("#screen-title");
 const titleText = title.querySelector("span");
 const list = document.querySelector("#entries");
@@ -67,6 +87,7 @@ const status = document.querySelector("#status");
 const audio = document.querySelector("#music");
 const player = document.querySelector(".music-player");
 const nowPlaying = document.querySelector("#now-playing");
+const trackArtist = document.querySelector("#track-artist");
 const playbackState = document.querySelector("#playback-state");
 const position = document.querySelector("#track-position");
 const trackTime = document.querySelector("#track-time");
@@ -95,11 +116,13 @@ function updatePlayer() {
   const hidden = !track;
   const visibilityChanged = player.hidden !== hidden;
   player.hidden = hidden;
+  player.classList.toggle("expanded", screen === "playing");
   const duration = Number.isFinite(audio.duration) ? audio.duration : 0;
   playbackState.dataset.state = audio.ended ? "ended" : audio.paused ? "paused" : "playing";
   playbackState.textContent = audio.ended ? "Terminato ·" : "";
   playbackState.setAttribute("aria-label", audio.ended ? "Terminato" : audio.paused ? "In pausa" : "In riproduzione");
   nowPlaying.textContent = track?.label ?? "";
+  trackArtist.textContent = playingAlbum?.artist ?? "";
   position.max = duration || 1;
   position.value = duration ? audio.currentTime : 0;
   trackTime.textContent = formatTime(audio.currentTime) + " / " + formatTime(duration);
@@ -120,18 +143,18 @@ async function playTrack(index, album = activeAlbum) {
   } else if (audio.ended) {
     audio.currentTime = 0;
   }
-  if (screen === "music") status.textContent = "";
+  if (screen === "music" || screen === "playing") status.textContent = "";
   const source = audio.src;
   try {
     await audio.play();
   } catch (error) {
-    if (error.name !== "AbortError" && audio.src === source && screen === "music") {
+    if (error.name !== "AbortError" && audio.src === source && (screen === "music" || screen === "playing")) {
       status.textContent = "Impossibile riprodurre il brano";
     }
   }
 }
 
-for (const event of ["loadedmetadata", "durationchange", "timeupdate", "playing", "pause", "emptied", "error"]) {
+for (const event of ["loadedmetadata", "durationchange", "timeupdate", "seeking", "seeked", "playing", "pause", "emptied", "error"]) {
   audio.addEventListener(event, updatePlayer);
 }
 function playAdjacentTrack(index) {
@@ -264,10 +287,6 @@ function render() {
     updateTitleScroll();
   }
   updatePlayer();
-  if (screen === "home") {
-    const entry = current.entries[selected];
-    status.textContent = entry.description ?? entry.label;
-  }
   detail.hidden = screen !== "product";
   if (!detail.hidden) {
     productName.textContent = activeProduct.label;
@@ -289,6 +308,7 @@ function render() {
       productImage.hidden = true;
     }
   }
+  list.hidden = screen === "playing";
   list.classList.toggle("products", screen === "store");
   list.replaceChildren(...current.entries.map((entry, index) => {
     const item = document.createElement("li");
@@ -320,10 +340,23 @@ function move(step) {
   if (!count) return;
   selected = Math.max(0, Math.min(count - 1, selected + step));
   render();
-  if (screen === "links") status.textContent = screens.links.entries[selected].label;
+}
+
+function openTrack() {
+  const index = selected;
+  screen = "playing";
+  status.textContent = "";
+  if (activeAlbum !== playingAlbum || index !== playingTrack || audio.paused || audio.ended) {
+    playTrack(index);
+  }
+  render();
 }
 
 function openSelection() {
+  if (screen === "playing") {
+    playTrack(playingTrack, playingAlbum);
+    return;
+  }
   if (screen === "product") {
     window.open(activeProduct.url, "_blank", "noopener,noreferrer");
     return;
@@ -343,7 +376,7 @@ function openSelection() {
     return;
   }
   if (screen === "music") {
-    playTrack(selected);
+    openTrack();
     return;
   }
   if (screen === "store") {
@@ -371,7 +404,10 @@ function openSelection() {
 
 function goBack() {
   if (screen === "home") return;
-  if (screen === "music") {
+  if (screen === "playing") {
+    screen = "music";
+    if (playingTrack >= 0) selected = playingTrack;
+  } else if (screen === "music") {
     screen = "albums";
     selected = albums.indexOf(activeAlbum);
   } else if (screen === "product") {
@@ -387,7 +423,8 @@ function goBack() {
 }
 
 function useTrackButton(step) {
-  if (screen !== "music" || activeAlbum !== playingAlbum || playingTrack < 0 || audio.paused) {
+  if (playingTrack < 0 ||
+      (screen !== "playing" && (screen !== "music" || activeAlbum !== playingAlbum || audio.paused))) {
     move(step);
     return;
   }
@@ -424,6 +461,49 @@ device.querySelector(".previous").addEventListener("click", () => useTrackButton
 device.querySelector(".next").addEventListener("click", () => useTrackButton(1));
 device.querySelector(".menu").addEventListener("click", goBack);
 device.querySelector(".select").addEventListener("click", openSelection);
+
+for (const button of device.querySelectorAll(".menu, .previous, .next, .play")) {
+  const activePointers = new Set();
+  const activeKeys = new Set();
+  const updatePressed = () => {
+    button.toggleAttribute("data-pressed", activePointers.size > 0 || activeKeys.size > 0);
+  };
+
+  button.addEventListener("pointerdown", event => {
+    if (event.button !== 0) return;
+    activePointers.add(event.pointerId);
+    updatePressed();
+  });
+
+  function releasePointer(event) {
+    if (activePointers.delete(event.pointerId)) updatePressed();
+  }
+
+  window.addEventListener("pointerup", releasePointer, true);
+  window.addEventListener("pointercancel", releasePointer, true);
+
+  button.addEventListener("keydown", event => {
+    if (event.key !== " " && event.key !== "Enter") return;
+    activeKeys.add(event.key);
+    updatePressed();
+  });
+
+  button.addEventListener("keyup", event => {
+    if (activeKeys.delete(event.key)) updatePressed();
+  });
+
+  button.addEventListener("blur", () => {
+    activeKeys.clear();
+    updatePressed();
+  });
+
+  window.addEventListener("blur", () => {
+    activePointers.clear();
+    activeKeys.clear();
+    updatePressed();
+  });
+}
+
 let stopTimer;
 let didLongPress = false;
 
@@ -438,7 +518,8 @@ playButton.addEventListener("pointerdown", event => {
     audio.pause();
     audio.removeAttribute("src");
     audio.load();
-    updatePlayer();
+    if (screen === "playing") goBack();
+    else updatePlayer();
   }, 2000);
 });
 
@@ -460,6 +541,15 @@ let pointer = null;
 let lastAngle = 0;
 let rotation = 0;
 const stepAngle = Math.PI / 5;
+
+function seekBy(seconds) {
+  if (!Number.isFinite(audio.duration) || audio.duration <= 0) return false;
+  const time = Math.max(0, Math.min(audio.duration, audio.currentTime + seconds));
+  if (time === audio.currentTime) return false;
+  audio.currentTime = time;
+  updatePlayer();
+  return true;
+}
 
 function angleAt(event) {
   const bounds = wheel.getBoundingClientRect();
@@ -485,8 +575,14 @@ wheel.addEventListener("pointermove", event => {
   const steps = Math.trunc(rotation / stepAngle);
   rotation -= steps * stepAngle;
   const previousSelection = selected;
-  move(steps);
-  if (event.pointerType === "touch" && selected !== previousSelection) {
+  let changed;
+  if (screen === "playing") {
+    changed = seekBy(steps * 5);
+  } else {
+    move(steps);
+    changed = selected !== previousSelection;
+  }
+  if (event.pointerType === "touch" && changed) {
     hapticFeedback();
   }
 });
