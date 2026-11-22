@@ -1,0 +1,81 @@
+{
+  "start": "home",
+  "artists": [
+    {
+      "id": "artista-1",
+      "label": "LA POSA BULB"
+    },
+    {
+      "id": "artista-2",
+      "label": "Edera"
+    }
+  ],
+  "albums": [
+    {
+      "label": "LA POSA BULB",
+      "tracks": [
+        {
+          "label": "Notti d'estate",
+          "url": "audio/LA%20POSA%20BULB/1%20-%20Notti%20d'estate.wav"
+        },
+        {
+          "label": "Fine del mondo",
+          "url": "audio/LA%20POSA%20BULB/2%20-%20Fine%20del%20mondo.wav"
+        },
+        {
+          "label": "Momento",
+          "url": "audio/LA%20POSA%20BULB/3%20-%20Momento.wav"
+        },
+        {
+          "label": "Resto",
+          "url": "audio/LA%20POSA%20BULB/4%20-%20Resto.wav"
+        },
+        {
+          "label": "Ragazza gatto",
+          "url": "audio/LA%20POSA%20BULB/5%20-%20Ragazza%20gatto.wav"
+        },
+        {
+          "label": "Lato di te",
+          "url": "audio/LA%20POSA%20BULB/6%20-%20Lato%20di%20te.wav"
+        },
+        {
+          "label": "Carosello",
+          "url": "audio/LA%20POSA%20BULB/7%20-%20Carosello.wav"
+        },
+        {
+          "label": "Torino",
+          "url": "audio/LA%20POSA%20BULB/8%20-%20Torino.wav"
+        }
+      ],
+      "id": "album-1",
+      "artistId": "artista-1"
+    },
+    {
+      "label": "Demone custode",
+      "tracks": [
+        {
+          "label": "Il bar dei cattivi",
+          "url": "audio/DEMONE%20CUSTODE%20-%20Edera/1%20-%20Il%20bar%20dei%20cattivi.wav"
+        },
+        {
+          "label": "Snob",
+          "url": "audio/DEMONE%20CUSTODE%20-%20Edera/2%20-%20Snob.wav"
+        },
+        {
+          "label": "Non ho mai",
+          "url": "audio/DEMONE%20CUSTODE%20-%20Edera/3%20-%20Non%20ho%20mai.wav"
+        },
+        {
+          "label": "Ballo",
+          "url": "audio/DEMONE%20CUSTODE%20-%20Edera/4%20-%20Ballo.wav"
+        },
+        {
+          "label": "Demone custode",
+          "url": "audio/DEMONE%20CUSTODE%20-%20Edera/5%20-%20Demone%20custode.wav"
+        }
+      ],
+      "id": "album-2",
+      "artistId": "artista-2"
+    }
+  ]
+}

@@ -113,6 +113,21 @@ body {
   padding: 4px 8px;
 }
 .entries li[aria-current="true"] { color: #e3e6d1; background: #3d4333; }
+.row-label { min-width: 0; overflow: hidden; white-space: nowrap; }
+.row-label > span { display: block; width: max-content; }
+@media (hover: hover) {
+  .entries li:has(.row-label) { pointer-events: auto; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .entries li:is([aria-current="true"], :hover) .row-label.overflows > span {
+    animation: scroll-title var(--title-duration) linear infinite alternate;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .entries li:is([aria-current="true"], :hover) .row-label > span {
+    width: auto; white-space: normal; overflow-wrap: anywhere;
+  }
+}
 .entries.products li {
   display: grid;
   grid-template-columns: 32px minmax(0, 1fr) auto;

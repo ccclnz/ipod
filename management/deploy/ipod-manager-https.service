@@ -1,0 +1,7 @@
+[Unit]
+Description=Attiva HTTPS quando il DNS del pannello iPod è disponibile
+After=nginx.service network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/ipod-manager/deploy/activate-https

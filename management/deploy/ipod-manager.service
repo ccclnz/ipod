@@ -1,0 +1,21 @@
+[Unit]
+Description=Gestione catalogo iPod
+After=local-fs.target
+
+[Service]
+ExecStart=/usr/bin/python3 /opt/ipod-manager/server.py
+User=ipod-manager
+Group=www-data
+StateDirectory=ipod-manager
+StateDirectoryMode=0755
+RuntimeDirectory=ipod-manager
+RuntimeDirectoryMode=0750
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+RestrictAddressFamilies=AF_UNIX
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

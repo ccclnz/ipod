@@ -1,0 +1,11 @@
+#!/bin/sh
+set -eu
+host=manageipod.laposabulb.com
+getent ahosts "$host" >/dev/null || exit 0
+if [ ! -s "/etc/letsencrypt/live/$host/fullchain.pem" ]; then
+    certbot certonly --non-interactive --webroot -w /var/www/ipod-manager-acme -d "$host"
+fi
+install -m 644 /opt/ipod-manager/deploy/nginx-https.conf /etc/nginx/sites-enabled/ipod-manager-https
+nginx -t
+systemctl reload nginx
+systemctl disable --now ipod-manager-https.timer

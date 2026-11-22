@@ -10,42 +10,22 @@ const shopify = {
   publicStorefrontToken: "f229756dc9d63b352f608be757067930"
 };
 
-const albums = [
-  {
-    folder: "LA POSA BULB",
-    artist: "LA POSA BULB",
-    titles: [
-      "Notti d'estate",
-      "Fine del mondo",
-      "Momento",
-      "Resto",
-      "Ragazza gatto",
-      "Lato di te",
-      "Carosello",
-      "Torino"
-    ]
-  },
-  {
-    folder: "DEMONE CUSTODE - Edera",
-    artist: "Edera",
-    titles: ["Il bar dei cattivi", "Snob", "Non ho mai", "Ballo", "Demone custode"]
-  }
-].map(({ folder, artist, titles }) => ({
-  label: folder,
-  artist,
-  tracks: titles.map((title, index) => ({
-    label: title,
-    url: "audio/" + encodeURIComponent(folder) + "/" + encodeURIComponent((index + 1) + " - " + title + ".wav")
-  }))
-}));
+let albums = [];
+let artists = [];
+let albumList = "albums";
+const allTracks = { label: "Brani", tracks: [] };
+const alphabet = new Intl.Collator("it", { sensitivity: "base", numeric: true });
+function byLabel(a, b) {
+  return alphabet.compare(a.label, b.label) || alphabet.compare(a.artist ?? "", b.artist ?? "");
+}
 
 const screens = {
   home: {
-    title: "LA POSA BULB",
+    title: "BULB Pod",
     entries: [
       { label: "Link", screen: "links" },
       { label: "La Posa Store", screen: "store" },
-      { label: "Ascolta", screen: "albums" }
+      { label: "Ascolta", screen: "listen" }
     ]
   },
   links: {
@@ -56,7 +36,21 @@ const screens = {
       { label: "YouTube", url: destinations.youtube }
     ]
   },
+  listen: {
+    title: "Ascolta",
+    entries: [
+      { label: "Artisti", screen: "artists" },
+      { label: "Album", screen: "albums" },
+      { label: "Generi", screen: "genres" },
+      { label: "Playlist", screen: "playlists" },
+      { label: "Brani", screen: "songs" }
+    ]
+  },
+  genres: { title: "Generi", entries: [], empty: "Nessun genere disponibile" },
+  playlists: { title: "Playlist", entries: [], empty: "Nessuna playlist" },
   albums: { title: "Album", entries: albums },
+  artists: { title: "Artisti", entries: [] },
+  artistAlbums: { title: "", entries: [] },
   music: { title: "", entries: [] },
   playing: { title: "In riproduzione", entries: [] },
   store: { title: "LA POSA STORE", entries: [] },
@@ -122,7 +116,7 @@ function updatePlayer() {
   playbackState.textContent = audio.ended ? "Terminato ·" : "";
   playbackState.setAttribute("aria-label", audio.ended ? "Terminato" : audio.paused ? "In pausa" : "In riproduzione");
   nowPlaying.textContent = track?.label ?? "";
-  trackArtist.textContent = playingAlbum?.artist ?? "";
+  trackArtist.textContent = track?.artist ?? "";
   position.max = duration || 1;
   position.value = duration ? audio.currentTime : 0;
   trackTime.textContent = formatTime(audio.currentTime) + " / " + formatTime(duration);
@@ -280,6 +274,20 @@ const titleObserver = new ResizeObserver(updateTitleScroll);
 titleObserver.observe(title);
 titleObserver.observe(titleText);
 
+function measureRowLabels() {
+  for (const clip of list.querySelectorAll(".row-label")) {
+    const distance = clip.firstElementChild.offsetWidth - clip.clientWidth;
+    clip.classList.toggle("overflows", distance > 0);
+    if (distance > 0) {
+      clip.style.setProperty("--title-offset", -distance + "px");
+      clip.style.setProperty("--title-duration", Math.max(2.5, distance / 22) + "s");
+    }
+  }
+}
+const rowObserver = new ResizeObserver(measureRowLabels);
+rowObserver.observe(list);
+document.fonts?.ready.then(measureRowLabels);
+
 function render() {
   const current = screens[screen];
   if (titleText.textContent !== current.title) {
@@ -310,10 +318,21 @@ function render() {
   }
   list.hidden = screen === "playing";
   list.classList.toggle("products", screen === "store");
+  const showTrackArtist = screen === "music" &&
+    (activeAlbum === allTracks || albumList === "albums" || albumList === "playlists");
+  const showArtist = showTrackArtist || screen === "albums";
   list.replaceChildren(...current.entries.map((entry, index) => {
     const item = document.createElement("li");
     const name = document.createElement("span");
-    name.textContent = entry.label;
+    if (["albums", "artistAlbums", "artists", "genres", "playlists", "music"].includes(screen)) {
+      name.className = "row-label";
+      const text = document.createElement("span");
+      text.textContent = showArtist && entry.artist
+        ? entry.label + " - " + entry.artist : entry.label;
+      name.append(text);
+    } else {
+      name.textContent = entry.label;
+    }
     const arrow = document.createElement("span");
     arrow.textContent = "›";
     arrow.className = "entry-arrow";
@@ -323,6 +342,7 @@ function render() {
     item.append(name, arrow);
     return item;
   }));
+  measureRowLabels();
   keepSelectionVisible();
 }
 
@@ -352,6 +372,15 @@ function openTrack() {
   render();
 }
 
+function openCollection(collection, parent) {
+  activeAlbum = collection;
+  albumList = parent;
+  screen = "music";
+  screens.music = { title: collection.label, entries: collection.tracks };
+  selected = collection === playingAlbum ? playingTrack : 0;
+  status.textContent = collection.tracks.length ? "" : "Brani in arrivo";
+}
+
 function openSelection() {
   if (screen === "playing") {
     playTrack(playingTrack, playingAlbum);
@@ -363,15 +392,20 @@ function openSelection() {
   }
   const entry = screens[screen].entries[selected];
   if (!entry) return;
-  if (screen === "albums") {
-    if (activeAlbum !== entry) {
-      activeAlbum = entry;
-      screens.music.title = entry.label;
-      screens.music.entries = entry.tracks;
-    }
-    screen = "music";
-    selected = activeAlbum === playingAlbum ? playingTrack : 0;
-    status.textContent = entry.tracks.length ? "" : "Brani in arrivo";
+  if (screen === "artists") {
+    screens.artistAlbums = { title: entry.label, entries: albums.flatMap(album => {
+      const tracks = album.tracks.filter(track => track.artistId === entry.id);
+      if (!tracks.length && (album.tracks.length || album.artistId !== entry.id)) return [];
+      return tracks.length === album.tracks.length ? [album] : [{ ...album, tracks }];
+    }) };
+    screen = "artistAlbums";
+    selected = 0;
+    status.textContent = screens.artistAlbums.entries.length ? "" : "Album in arrivo";
+    render();
+    return;
+  }
+  if (entry.screen === "songs" || ["albums", "artistAlbums", "genres", "playlists"].includes(screen)) {
+    openCollection(entry.screen === "songs" ? allTracks : entry, screen);
     render();
     return;
   }
@@ -389,9 +423,9 @@ function openSelection() {
   }
   if (entry.screen) {
     screen = entry.screen;
-    selected = screen === "albums" && activeAlbum ? albums.indexOf(activeAlbum) : 0;
+    selected = screen === "albums" && activeAlbum ? Math.max(0, albums.indexOf(activeAlbum)) : 0;
     render();
-    status.textContent = "";
+    status.textContent = screens[screen].entries.length ? "" : screens[screen].empty ?? "";
     if (screen === "store") refreshCatalog();
     return;
   }
@@ -408,15 +442,22 @@ function goBack() {
     screen = "music";
     if (playingTrack >= 0) selected = playingTrack;
   } else if (screen === "music") {
-    screen = "albums";
-    selected = albums.indexOf(activeAlbum);
+    screen = albumList;
+    selected = activeAlbum === allTracks ? screens.listen.entries.findIndex(e => e.screen === "songs")
+      : Math.max(0, screens[screen].entries.indexOf(activeAlbum));
+  } else if (screen === "artistAlbums") {
+    screen = "artists";
+    selected = Math.max(0, artists.findIndex(artist => artist.label === screens.artistAlbums.title));
+  } else if (screens.listen.entries.some(entry => entry.screen === screen)) {
+    selected = screens.listen.entries.findIndex(entry => entry.screen === screen);
+    screen = "listen";
   } else if (screen === "product") {
     screen = "store";
     selected = Math.max(0, screens.store.entries.findIndex(entry => entry.url === activeProduct.url));
     activeProduct = undefined;
   } else {
+    selected = Math.max(0, screens.home.entries.findIndex(entry => entry.screen === screen));
     screen = "home";
-    selected = 0;
   }
   status.textContent = "";
   render();
@@ -591,4 +632,54 @@ wheel.addEventListener("lostpointercapture", event => {
   if (pointer === event.pointerId) pointer = null;
 });
 
-render();
+async function startPlayer() {
+  device.inert = true;
+  try {
+    const response = await fetch("catalog.json", { cache: "no-cache", signal: AbortSignal.timeout(8000) });
+    if (!response.ok) throw new Error();
+    const catalog = await response.json();
+    artists = catalog.artists.sort(byLabel);
+    const tracksByUrl = new Map();
+    const genres = new Map();
+    const artistNames = new Map(artists.map(artist => [artist.id, artist.label]));
+    albums = catalog.albums.map(album => {
+      const tracks = album.tracks.map(item => {
+        const artistId = item.artistId ?? album.artistId;
+        const track = { ...item, artistId, artist: artistNames.get(artistId) ?? "" };
+        tracksByUrl.set(track.url, track);
+        const label = track.genre || "Senza genere";
+        const key = label.toLocaleLowerCase("it");
+        if (!genres.has(key)) genres.set(key, { label, tracks: [] });
+        genres.get(key).tracks.push(track);
+        return track;
+      });
+      return { ...album, artist: artistNames.get(album.artistId), tracks: tracks.sort(byLabel) };
+    }).sort(byLabel);
+    allTracks.tracks = Array.from(tracksByUrl.values()).sort(byLabel);
+    for (const genre of genres.values()) genre.tracks.sort(byLabel);
+    screens.genres.entries = Array.from(genres.values()).sort(byLabel);
+    screens.playlists.entries = (catalog.playlists ?? []).map(playlist => ({
+      label: playlist.label,
+      tracks: playlist.tracks.map(url => tracksByUrl.get(url)).filter(Boolean).sort(byLabel)
+    })).sort(byLabel);
+    screens.albums.entries = albums;
+    screens.artists.entries = artists;
+    activeAlbum = albums.find(album => album.id === catalog.start);
+    if (catalog.start === "songs") {
+      openCollection(allTracks, "listen");
+    } else if (activeAlbum) {
+      openCollection(activeAlbum, "albums");
+    } else if (["home", "links", "listen", "albums", "artists", "genres", "playlists", "store"].includes(catalog.start)) {
+      screen = catalog.start;
+      if (!screens[screen].entries.length) status.textContent = screens[screen].empty ?? "";
+    }
+  } catch {
+    status.textContent = "Catalogo musicale non disponibile. Ricarica per riprovare.";
+  } finally {
+    device.inert = false;
+    render();
+  }
+  if (screen === "store") refreshCatalog();
+}
+
+startPlayer();

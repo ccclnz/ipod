@@ -1,0 +1,9 @@
+[Unit]
+Description=Verifica il DNS del pannello iPod fino alla prima attivazione HTTPS
+
+[Timer]
+OnActiveSec=1min
+OnUnitInactiveSec=30min
+
+[Install]
+WantedBy=timers.target

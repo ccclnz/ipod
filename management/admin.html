@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gestione iPod · LA POSA BULB</title><link rel="stylesheet" href="/admin.css"><script defer src="/admin.js"></script></head>
+<body><main><header><div>LA POSA BULB</div><a href="https://ipod.laposabulb.com/" target="_blank" rel="noopener">Apri iPod ↗</a></header>
+<h1>Gestione iPod</h1><p id="status" role="status">Caricamento del catalogo…</p>
+<section><h2>Schermata iniziale</h2><form data-action="start"><label>All’apertura del lettore<select name="start" required></select></label><button>Salva schermata</button></form></section>
+<section><h2>Artisti</h2><form data-action="artist"><label>Nome dell’artista<input name="label" maxlength="160" required></label><button>Aggiungi artista</button></form></section>
+<section><h2>Album</h2><form data-action="album"><label>Artista<select name="artist" required></select></label><label>Titolo dell’album<input name="label" maxlength="160" required></label><button>Aggiungi album</button></form></section>
+<section><h2>Brani</h2><form data-action="track"><label>Album<select name="album" required></select></label><label>Titolo del brano<input name="label" maxlength="160" required></label><label>Genere (facoltativo)<input name="genre" list="genres" maxlength="160"></label><label>File audio · fino a 128 MiB<input name="file" type="file" accept=".mp3,.m4a,.wav,.ogg,.flac" required></label><button>Carica brano</button></form></section>
+<section><h2>Modifica brano pubblicato</h2>
+<form data-action="edit-track">
+<label class="track-picker">Brano<select name="track" required></select></label>
+<label>Artista del brano<select name="artist" required></select></label>
+<label>Album<select name="album" required></select></label>
+<label>Genere<input name="genre" list="genres" maxlength="160" placeholder="Senza genere"></label>
+<fieldset><legend>Playlist del brano</legend><div id="memberships"></div></fieldset>
+<button>Salva modifiche</button></form>
+<datalist id="genres"></datalist></section>
+<section><h2>Playlist</h2>
+<form data-action="playlist"><label>Nome della playlist<input name="label" maxlength="160" required></label><button>Crea playlist</button></form>
+<form data-action="playlist-track"><label>Playlist<select name="playlist" required></select></label><label>Brano da aggiungere<select name="track" required></select></label><button>Aggiungi alla playlist</button></form>
+<div id="playlist-library"></div></section>
+<section><h2>Catalogo pubblicato</h2><div id="library"></div></section></main></body></html>
