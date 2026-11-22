@@ -6,7 +6,7 @@
 }
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
   font-family: "Inter", system-ui, sans-serif;
   /* Safari uses the canvas background color to tint its surrounding bars. */
   background: #78368a;
@@ -14,6 +14,8 @@
 }
 * { box-sizing: border-box; }
 body {
+  /* Give Safari an explicit page color rather than a transparent body. */
+  background-color: #78368a;
   min-height: 100svh;
   min-height: 100dvh;
   display: flex;
@@ -26,8 +28,10 @@ body {
   padding-inline: max(12px, env(safe-area-inset-left)) max(12px, env(safe-area-inset-right));
 }
 @media (prefers-reduced-motion: no-preference) {
-  :root {
-    background: url("gif cielo bulb.gif") center / cover no-repeat,
+  body {
+    background:
+      linear-gradient(to bottom, #78368a 0%, #78368a 10%, rgb(120 54 138 / 0%) 50%),
+      url("gif cielo bulb.gif") center / cover no-repeat,
       #78368a;
   }
 }
