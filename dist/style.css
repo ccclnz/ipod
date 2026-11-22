@@ -6,10 +6,10 @@
 }
 
 :root {
-  color-scheme: light;
+  color-scheme: dark;
   font-family: "Inter", system-ui, sans-serif;
   /* Safari uses the canvas background color to tint its surrounding bars. */
-  background: #e4e3d9;
+  background: #78368a;
   color: #e7e7e1;
 }
 * { box-sizing: border-box; }
@@ -28,7 +28,7 @@ body {
 @media (prefers-reduced-motion: no-preference) {
   :root {
     background: url("gif cielo bulb.gif") center / cover no-repeat,
-      #e4e3d9;
+      #78368a;
   }
 }
 .ipod {
