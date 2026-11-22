@@ -6,9 +6,10 @@
 }
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
   font-family: "Inter", system-ui, sans-serif;
-  background: #242626 radial-gradient(ellipse at 50% 15%, #494b47, #242626 70%);
+  /* Safari uses the canvas background color to tint its surrounding bars. */
+  background: #e4e3d9;
   color: #e7e7e1;
 }
 * { box-sizing: border-box; }
@@ -27,7 +28,7 @@ body {
 @media (prefers-reduced-motion: no-preference) {
   :root {
     background: url("gif cielo bulb.gif") center / cover no-repeat,
-      #242626 radial-gradient(ellipse at 50% 15%, #494b47, #242626 70%);
+      #e4e3d9;
   }
 }
 .ipod {
